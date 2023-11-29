@@ -1,0 +1,9 @@
+body {
+    margin: 0 auto;
+}
+.v-application--wrap {
+    align-items: center;
+}
+.row-pointer > .v-data-table__wrapper > table > tbody > tr:hover {  
+    cursor: pointer;
+}
