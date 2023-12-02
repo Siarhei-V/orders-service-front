@@ -113,13 +113,13 @@
                 </template>
               </v-simple-table>
               <v-row class="ma-0">
-                  <v-col cols="6" class="d-flex justify-center">
-                    <v-btn small color="primary" elevation="5">Редактировать</v-btn>
-                  </v-col>
-                  <v-col cols="6" class="d-flex justify-center">
-                    <v-btn small color="error" elevation="5" @click="removeOrder(selectedRow.id)">Удалить</v-btn>
-                  </v-col>
-                </v-row>
+                <v-col cols="6" class="d-flex justify-center">
+                  <v-btn small color="primary" elevation="5" @click="editOrder">Редактировать</v-btn>
+                </v-col>
+                <v-col cols="6" class="d-flex justify-center">
+                  <v-btn small color="error" elevation="5" @click="removeOrder(selectedRow.id)">Удалить</v-btn>
+                </v-col>
+              </v-row>
             </template>
           </v-card>
         </v-dialog>
@@ -210,8 +210,8 @@
               class="col-3"
             ></v-autocomplete>
           </v-flex>
-          <v-divider class="mt-5"></v-divider>
-          <div class="d-flex justify-center mt-2">
+          <v-divider></v-divider>
+          <div class="d-flex justify-center ma-4">
             <v-btn @click="addOrderItem" small>Добавить товар</v-btn>
           </div>
           <div v-for="(item, index) in newOrderItems" :key="index">
@@ -248,9 +248,9 @@
               </div>
             </v-flex>
           </div>
-          <v-divider class="mt-5"></v-divider>
+          <v-divider></v-divider>
           <v-card-actions>
-            <v-btn text @click="closeCreationPopup">Отмена</v-btn>
+            <v-btn text @click="isCreationDialogOpened=false">Отмена</v-btn>
             <v-spacer></v-spacer>
             <v-slide-x-reverse-transition>
               <v-tooltip
@@ -275,7 +275,7 @@
               text
               @click="submit"
             >
-              Создать
+              Сохранить
             </v-btn>
           </v-card-actions>
         </v-card>
@@ -334,7 +334,8 @@ export default {
           this.isGetDialogOpened = true;
           this.selectedRow = row;
           this.selectedProviderName = row.provider.name;
-          this.selectedOrderDate = row.date.slice(0, 10);
+          let currentDate = new Date(row.date).toString();
+          this.selectedOrderDate = `${row.date.slice(0, 10)} ${currentDate.slice(16, 21)}`;
         }
       })
       .catch(error => {
@@ -353,6 +354,10 @@ export default {
         .then(response => {
           if (response.status === 200) {
             this.orders = response.data.data;
+            this.orders.forEach(o => {
+              let localDate = new Date(o.date).toString();
+              o.date = `${o.date.slice(0, 10)} ${localDate.slice(16, 21)}`;
+            });
             this.isLoadingActive = false;
           }
         })
@@ -374,7 +379,7 @@ export default {
           console.log(error);
         });
     },
-    openCreationPopup: async function() {
+    openCreationPopup: function() {
       axios.get(this.baseUrl + '/api/v1/providers')
         .then(response => {
           if (response.status === 200) {
@@ -386,13 +391,8 @@ export default {
           console.log(error);
         });
       this.isCreationDialogOpened = true;
-      await nextTick();
-      this.resetForm();
     },
-    closeCreationPopup: function() {
-      this.isCreationDialogOpened = false;
-    },
-    resetForm: async function () {
+    resetForm: async function() {
       this.errorMessages = [];
       this.orderDate = new Date().toISOString().slice(0, 10);
       this.newOrderTime = new Date(new Date().toISOString()).toString().slice(16, 21);
@@ -407,7 +407,7 @@ export default {
         })
       });
     },
-    submit () {
+    submit: function() {
       let isValidationOk = true;
       Object.keys(this.form).forEach(f => {
         isValidationOk &&= this.$refs[f].validate(true);
@@ -421,33 +421,82 @@ export default {
         let date = `${this.orderDate} ${this.newOrderTime}:00`;
         date = new Date(date).toISOString();
 
-        axios.post(
-          this.baseUrl + '/api/v1/orders/order', 
-          {
-            number: this.number,
-            date: date,
-            providerId: this.provider,
-            orderItems: this.newOrderItems,
-          }
-        )
-          .then(response => {
-            if (response.status === 201) {
-              // TODO: show message
-              this.isCreationDialogOpened = false;
-              // this.resetForm();
-              this.getOrders();
+        if (!this.isGetDialogOpened) {
+          axios.post(
+            this.baseUrl + '/api/v1/orders/order', 
+            {
+              number: this.number,
+              date: date,
+              providerId: this.provider,
+              orderItems: this.newOrderItems,
             }
-          })
-          .catch(error => {
-            console.log(error);
-          });
+          )
+            .then(response => {
+              if (response.status === 201) {
+                // TODO: show message
+                this.isCreationDialogOpened = false;
+                // await nextTick();
+                this.resetForm();
+                this.getOrders();
+              }
+            })
+            .catch(error => {
+              console.log(error);
+            });
+        } else {
+          axios.put(
+            this.baseUrl + '/api/v1/orders/order', 
+            {
+              id: this.selectedRow.id,
+              number: this.number,
+              date: date,
+              providerId: this.provider,
+              orderItems: this.newOrderItems,
+            }
+          )
+            .then(response => {
+              if (response.status === 200) {
+                // TODO: show message
+                this.isCreationDialogOpened = false;
+                this.isGetDialogOpened = false;
+                this.resetForm();
+                this.getOrders();
+              }
+            })
+            .catch(error => {
+              console.log(error);
+            });          
+        }
       }
     },
-    addOrderItem() {
+    addOrderItem: function() {
       this.newOrderItems.unshift({ name: '', quantity: '', unit: '' });
     },
-    deleteOrderItem(index) {
+    deleteOrderItem: function(index) {
       this.newOrderItems.splice(index, 1);
+    },
+    editOrder: async function() {
+      axios.get(this.baseUrl + '/api/v1/providers')
+        .then(response => {
+          if (response.status === 200) {
+            // TODO: show message
+            this.providers = response.data.data;
+          }
+        })
+        .catch(error => {
+          console.log(error);
+        });
+        
+      this.isCreationDialogOpened = true;
+      await nextTick();
+      this.resetForm();
+      await nextTick();
+      this.number = this.selectedRow.number;
+      this.orderDate = this.selectedOrderDate.slice(0, 10);
+      this.newOrderTime = this.selectedRow.date.slice(11, 16);
+      this.provider = this.selectedRow.provider;
+      console.log(this.provider);
+      this.newOrderItems = this.orderItems;
     }
   },
   computed: {
