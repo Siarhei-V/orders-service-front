@@ -63,7 +63,7 @@
           </v-col>
         </v-row>
         <div>Фильтры заказов за выбранный период времени</div>
-        <div class="d-flex  justify-center align-center filters" style="gap: 5px 20px; flex-wrap: wrap">
+        <div class="d-flex justify-space-around align-center filters" style="gap: 5px 20px; flex-wrap: wrap">
           <v-select
             :items="filters.numbers"
             label="Номера заказов"
@@ -72,7 +72,7 @@
             chips
             multiple
             :menu-props="{ down: true, offsetY: true }"
-            class="col-5"
+            style="width: 280px"
           >
             <template v-slot:selection="{ item, index }">
               <v-chip v-if="index === 0">
@@ -94,7 +94,7 @@
             chips
             multiple
             :menu-props="{ down: true, offsetY: true }"
-            class="col-5"
+            style="width: 280px"
           >
             <template v-slot:selection="{ item, index }">
               <v-chip v-if="index === 0">
@@ -116,7 +116,7 @@
             chips
             multiple
             :menu-props="{ down: true, offsetY: true }"
-            class="col-5"
+            style="width: 280px"
           >
             <template v-slot:selection="{ item, index }">
               <v-chip v-if="index === 0">
@@ -138,7 +138,7 @@
             chips
             multiple
             :menu-props="{ down: true, offsetY: true }"
-            class="col-5"
+            style="width: 280px"
           >
             <template v-slot:selection="{ item, index }">
               <v-chip v-if="index === 0">
@@ -220,7 +220,7 @@
         width="1000"
       >
         <v-card ref="form" class="pa-4">
-          <v-flex row class="justify-space-around ma-0">
+          <v-flex row class="justify-space-around ma-0" style="gap: 10px">
             <v-text-field
               ref="number"
               v-model="number"
@@ -228,7 +228,6 @@
               :error-messages="errorMessages"
               label="Номер заказа"
               required
-              class="col-3"
             ></v-text-field>
             <v-menu
               v-model="isOrderDateOpened"
@@ -245,7 +244,6 @@
                   readonly
                   v-bind="attrs"
                   v-on="on"
-                  class="col-2"
                 ></v-text-field>
               </template>
               <v-date-picker
@@ -274,7 +272,6 @@
                   readonly
                   v-bind="attrs"
                   v-on="on"
-                  class="col-2"
                 ></v-text-field>
               </template>
               <v-time-picker
@@ -296,7 +293,6 @@
               label="Поставщик"
               placeholder="Начните вводить название или выберите из списка"
               required
-              class="col-3"
             ></v-autocomplete>
           </v-flex>
           <v-divider></v-divider>
@@ -312,7 +308,7 @@
                 :error-messages="errorMessages"
                 label="Наименование товара"
                 required
-                class="col-3"
+                style="width: 200px"
               ></v-text-field>
               <v-text-field
                 class="col-3"
@@ -325,18 +321,19 @@
                 :error-messages="errorMessages"
                 label="Количество товара"
                 required
+                style="width: 200px"
               ></v-text-field>
               <v-text-field
-                class="col-3"
                 ref="orderItemUnitRef"
                 v-model="newOrderItems[index].unit"
                 :rules="[() => !!newOrderItems[index].unit || 'Обязательное поле']"
                 :error-messages="errorMessages"
                 label="Единицы измерения"
                 required
+                style="width: 200px"
               ></v-text-field>
-              <div class="d-flex justify-center align-center flex-none">
-                <v-btn v-if="newOrderItems.length > 1" small @click="deleteOrderItem(index)">Удалить товар</v-btn>
+              <div v-if="newOrderItems.length > 1" class="d-flex justify-center align-center flex-none" style="width: 200px">
+                <v-btn small @click="deleteOrderItem(index)" class="ma-4" style="width: 150px">Удалить товар</v-btn>
               </div>
             </v-flex>
           </div>
@@ -391,7 +388,7 @@ export default {
   name: 'App',
 
   data: () => ({
-    baseUrl: 'http://localhost:5000',
+    baseUrl: 'http://37.230.117.222:8090',
     headers: [
       { text: 'Номер заказа', align: 'center', value: 'number' },
       { text: 'Дата заказа', align: 'center', value: 'date' },
@@ -694,7 +691,6 @@ export default {
         this.operationResultMessage = message;
         this.operationResultMessageColor = status;
       }
-
     }
   },
   computed: {
