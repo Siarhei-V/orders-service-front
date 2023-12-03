@@ -450,7 +450,7 @@ export default {
               id: this.selectedRow.id,
               number: this.number,
               date: date,
-              providerId: this.provider,
+              providerId: this.provider.id,
               orderItems: this.newOrderItems,
             }
           )
@@ -495,7 +495,6 @@ export default {
       this.orderDate = this.selectedOrderDate.slice(0, 10);
       this.newOrderTime = this.selectedRow.date.slice(11, 16);
       this.provider = this.selectedRow.provider;
-      console.log(this.provider);
       this.newOrderItems = this.orderItems;
     }
   },
