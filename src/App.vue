@@ -2,11 +2,6 @@
   <v-app>
     <div class="content">
       <div class="text-h4 ma-4">Заказы</div>
-      <div class="d-flex justify-center align-center" style="gap: 50px">
-        <v-btn elevation="2" @click="getOrders">Получить</v-btn>
-        <v-btn elevation="2" @click="openCreationPopup">Создать</v-btn>
-      </div>
-      <template>
         <v-row>
           <v-col cols="6">
             <v-menu
@@ -67,7 +62,101 @@
             </v-menu>
           </v-col>
         </v-row>
-      </template>
+        <div>Фильтры заказов за выбранный период времени</div>
+        <div class="d-flex  justify-center align-center filters" style="gap: 5px 20px; flex-wrap: wrap">
+          <v-select
+            :items="filters.numbers"
+            label="Номера заказов"
+            outlined
+            v-model="numbersFilter"
+            chips
+            multiple
+            :menu-props="{ down: true, offsetY: true }"
+            class="col-5"
+          >
+            <template v-slot:selection="{ item, index }">
+              <v-chip v-if="index === 0">
+                <span>{{ item }}</span>
+              </v-chip>
+              <span
+                v-if="index === 1"
+                class="grey--text text-caption"
+              >
+                (+{{ numbersFilter.length - 1 }} others)
+              </span>
+            </template>          
+          </v-select>
+          <v-select
+            :items="filters.itemNames"
+            label="Наименования товаров"
+            outlined
+            v-model="itemNamesFilter"
+            chips
+            multiple
+            :menu-props="{ down: true, offsetY: true }"
+            class="col-5"
+          >
+            <template v-slot:selection="{ item, index }">
+              <v-chip v-if="index === 0">
+                <span>{{ item }}</span>
+              </v-chip>
+              <span
+                v-if="index === 1"
+                class="grey--text text-caption"
+              >
+                (+{{ itemNamesFilter.length - 1 }} others)
+              </span>
+            </template>                 
+          </v-select>
+          <v-select
+            :items="filters.itemUnits"
+            label="Единицы товаров"
+            outlined
+            v-model="itemUnitsFilter"
+            chips
+            multiple
+            :menu-props="{ down: true, offsetY: true }"
+            class="col-5"
+          >
+            <template v-slot:selection="{ item, index }">
+              <v-chip v-if="index === 0">
+                <span>{{ item }}</span>
+              </v-chip>
+              <span
+                v-if="index === 1"
+                class="grey--text text-caption"
+              >
+                (+{{ itemUnitsFilter.length - 1 }} others)
+              </span>
+            </template>          
+          </v-select>
+          <v-select
+            :items="filters.providerNames"
+            label="Наименования поставщиков"
+            outlined
+            v-model="providerNamesFilter"
+            chips
+            multiple
+            :menu-props="{ down: true, offsetY: true }"
+            class="col-5"
+          >
+            <template v-slot:selection="{ item, index }">
+              <v-chip v-if="index === 0">
+                <span>{{ item }}</span>
+              </v-chip>
+              <span
+                v-if="index === 1"
+                class="grey--text text-caption"
+              >
+                (+{{ providerNamesFilter.length - 1 }} others)
+              </span>
+            </template>                
+          </v-select>
+        </div>
+        <div class="d-flex justify-center align-center" style="gap: 50px">
+          <v-btn elevation="2" @click="getOrders">Получить</v-btn>
+          <v-btn elevation="2" @click="openCreationPopup">Создать</v-btn>
+      </div>
     </div>
     <v-data-table
       :headers="headers"
@@ -229,7 +318,10 @@
                 class="col-3"
                 ref="orderItemUqantityRef"
                 v-model="newOrderItems[index].quantity"
-                :rules="[() => !!newOrderItems[index].quantity || 'Обязательное поле']"
+                :rules="[
+                  () => !!newOrderItems[index].quantity || 'Обязательное поле',
+                  () => !!newOrderItems[index].quantity && /^-?\d+(\.\d+)?$/.test(newOrderItems[index].quantity) || 'Введите число. Пример: 22.2',
+                ]"
                 :error-messages="errorMessages"
                 label="Количество товара"
                 required
@@ -244,7 +336,7 @@
                 required
               ></v-text-field>
               <div class="d-flex justify-center align-center flex-none">
-                <v-btn small @click="deleteOrderItem(index)">Удалить товар</v-btn>
+                <v-btn v-if="newOrderItems.length > 1" small @click="deleteOrderItem(index)">Удалить товар</v-btn>
               </div>
             </v-flex>
           </div>
@@ -318,7 +410,13 @@ export default {
     newOrderTime: new Date(new Date().toISOString()).toString().slice(16, 21),
     provider: null,
     newOrderItems: [ { name: null, quantity: null, unit: null } ],
-    isTimePickerOpened: false
+    isTimePickerOpened: false,
+    filters: { numbers: [], itemNames: [], itemUnits: [], providerNames: [] },
+    filteredFields: ['numbers', 'itemNames', 'itemUnits', 'providerNames'],
+    numbersFilter: null,
+    itemNamesFilter: null,
+    itemUnitsFilter: null,
+    providerNamesFilter: null
   }),
   methods: {
     handleRowClick: function(row) {
@@ -349,6 +447,13 @@ export default {
         params: {
           dateFrom: `${this.dateFrom}T00:00:00Z`,
           dateTo: `${this.dateTo}T23:59:59Z`,
+          numbersFilter: this.numbersFilter,
+          itemNamesFilter: this.itemNamesFilter,
+          itemUnitsFilter: this.itemUnitsFilter,
+          providerNamesFilter: this.providerNamesFilter
+        },
+        paramsSerializer: {
+          indexes: true
         }
       })
         .then(response => {
@@ -359,11 +464,14 @@ export default {
               o.date = `${o.date.slice(0, 10)} ${localDate.slice(16, 21)}`;
             });
             this.isLoadingActive = false;
+          } else {
+            this.orders = [];
           }
         })
         .catch(error => {
           console.log(error);
           this.isLoadingActive = false;
+          this.orders = [];
         });
     },
     removeOrder: function(id) {
@@ -373,6 +481,7 @@ export default {
             // TODO: show message
             this.isGetDialogOpened = false;
             this.getOrders();
+            this.getFilters();
           }
         })
         .catch(error => {
@@ -438,6 +547,7 @@ export default {
                 // await nextTick();
                 this.resetForm();
                 this.getOrders();
+                this.getFilters();
               }
             })
             .catch(error => {
@@ -461,6 +571,7 @@ export default {
                 this.isGetDialogOpened = false;
                 this.resetForm();
                 this.getOrders();
+                this.getFilters();
               }
             })
             .catch(error => {
@@ -496,6 +607,17 @@ export default {
       this.newOrderTime = this.selectedRow.date.slice(11, 16);
       this.provider = this.selectedRow.provider;
       this.newOrderItems = this.orderItems;
+    },
+    getFilters: function() {
+    axios.get(this.baseUrl + '/api/v1/filters')
+        .then(response => {
+          if (response.status === 200) {
+            this.filters = response.data.data;
+          }
+        })
+        .catch(error => {
+          console.log(error);
+        });
     }
   },
   computed: {
@@ -522,6 +644,8 @@ export default {
     const dateNow = new Date();
     dateNow.setMonth(dateNow.getMonth() - 1);
     this.dateFrom = dateNow.toISOString().slice(0, 10);
+
+    this.getFilters();
   }
 };
 </script>

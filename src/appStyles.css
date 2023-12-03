@@ -2,13 +2,20 @@
     width: 1000px;
 }
 .content {
-    height: 250px;
-    width: 600px;
+    height: 400px;
+    width: 850px;
     display: flex;
     flex-direction: column;
     justify-content: space-around;
     align-items: center;
+
 }
 .row {
-    flex: none;
+    flex: none !important;
+}
+.filters {
+    width: inherit;
+}
+.filters > .v-text-field .v-input__control {
+    height: 60px;
 }
