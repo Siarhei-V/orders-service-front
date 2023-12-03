@@ -373,6 +373,13 @@
         </v-card>
       </v-dialog>
     </template>
+     <v-snackbar
+      v-model="isOperationResultMessage"
+      :timeout="messageTimeout"
+      :color="operationResultMessageColor"
+    >
+      {{ operationResultMessage }}
+    </v-snackbar>
   </v-app>
 </template>
 
@@ -416,7 +423,11 @@ export default {
     numbersFilter: null,
     itemNamesFilter: null,
     itemUnitsFilter: null,
-    providerNamesFilter: null
+    providerNamesFilter: null,
+    isOperationResultMessage: false,
+    operationResultMessage: '',
+    operationResultMessageColor: '',
+    messageTimeout: 3000
   }),
   methods: {
     handleRowClick: function(row) {
@@ -426,20 +437,27 @@ export default {
           orderId: row.id,
         }
       })
-      .then(response => {
-        if (response.status === 200) {
-          this.orderItems = response.data.data;
-          this.isGetDialogOpened = true;
-          this.selectedRow = row;
-          this.selectedProviderName = row.provider.name;
-          let currentDate = new Date(row.date).toString();
-          this.selectedOrderDate = `${row.date.slice(0, 10)} ${currentDate.slice(16, 21)}`;
-        }
-      })
-      .catch(error => {
-        this.orderItems = [];
-        console.log(error);
-      });
+        .then(response => {
+          if (response.status === 200) {
+            this.orderItems = response.data.data;
+            this.isGetDialogOpened = true;
+            this.selectedRow = row;
+            this.selectedProviderName = row.provider.name;
+            let currentDate = new Date(row.date).toString();
+            this.selectedOrderDate = `${row.date.slice(0, 10)} ${currentDate.slice(16, 21)}`;
+            this.showResultMessage(response.data.message, 'success');
+          } else {
+            this.showResultMessage(response.data.message, 'error');
+          }
+        })
+        .catch(error => {
+          this.orderItems = [];
+          console.log(error);
+          this.showResultMessage(error.response.data.message, 'error');
+        })
+        .catch(() => {
+          this.showResultMessage('Сервер недоступен', 'error');
+        });
     },
     getOrders: function() {
       this.isLoadingActive = true;
@@ -464,40 +482,59 @@ export default {
               o.date = `${o.date.slice(0, 10)} ${localDate.slice(16, 21)}`;
             });
             this.isLoadingActive = false;
+            this.showResultMessage(response.data.message, 'success');
           } else {
             this.orders = [];
+            this.showResultMessage(response.data.message, 'error');
           }
         })
         .catch(error => {
           console.log(error);
           this.isLoadingActive = false;
           this.orders = [];
+          this.showResultMessage(error.response.data.message, 'error');
+        })
+        .catch(() => {
+          this.showResultMessage('Сервер недоступен', 'error');
         });
     },
     removeOrder: function(id) {
       axios.delete(this.baseUrl + `/api/v1/orders/order/${id}`)
         .then(response => {
           if (response.status === 200) {
-            // TODO: show message
             this.isGetDialogOpened = false;
             this.getOrders();
             this.getFilters();
+            this.showResultMessage(response.data.message, 'success');
+          } else {
+            this.showResultMessage(response.data.message, 'error');
           }
+
         })
         .catch(error => {
           console.log(error);
+          this.showResultMessage(error.response.data.message, 'error');
+        })
+        .catch(() => {
+          this.showResultMessage('Сервер недоступен', 'error');
         });
     },
     openCreationPopup: function() {
       axios.get(this.baseUrl + '/api/v1/providers')
         .then(response => {
           if (response.status === 200) {
-            // TODO: show message
             this.providers = response.data.data;
+            this.showResultMessage(response.data.message, 'success');
+          } else {
+            this.showResultMessage(response.data.message, 'error');
           }
         })
         .catch(error => {
           console.log(error);
+          this.showResultMessage(error.response.data.message, 'error');
+        })
+        .catch(() => {
+          this.showResultMessage('Сервер недоступен', 'error');
         });
       this.isCreationDialogOpened = true;
     },
@@ -542,16 +579,21 @@ export default {
           )
             .then(response => {
               if (response.status === 201) {
-                // TODO: show message
                 this.isCreationDialogOpened = false;
-                // await nextTick();
                 this.resetForm();
                 this.getOrders();
                 this.getFilters();
+                this.showResultMessage(response.data.message, 'success');
+              } else {
+                this.showResultMessage(response.data.message, 'error');
               }
             })
             .catch(error => {
               console.log(error);
+              this.showResultMessage(error.response.data.message, 'error');
+            })
+            .catch(() => {
+              this.showResultMessage('Сервер недоступен', 'error');
             });
         } else {
           axios.put(
@@ -566,17 +608,23 @@ export default {
           )
             .then(response => {
               if (response.status === 200) {
-                // TODO: show message
                 this.isCreationDialogOpened = false;
                 this.isGetDialogOpened = false;
                 this.resetForm();
                 this.getOrders();
                 this.getFilters();
+                this.showResultMessage(response.data.message, 'success');
+              } else {
+                this.showResultMessage(response.data.message, 'error');
               }
             })
             .catch(error => {
               console.log(error);
-            });          
+              this.showResultMessage(error.response.data.message, 'error');
+            })
+            .catch(() => {
+              this.showResultMessage('Сервер недоступен', 'error');
+            });
         }
       }
     },
@@ -590,12 +638,18 @@ export default {
       axios.get(this.baseUrl + '/api/v1/providers')
         .then(response => {
           if (response.status === 200) {
-            // TODO: show message
             this.providers = response.data.data;
+            this.showResultMessage(response.data.message, 'success');
+          } else {
+            this.showResultMessage(response.data.message, 'error');
           }
         })
         .catch(error => {
           console.log(error);
+          this.showResultMessage(error.response.data.message, 'error');
+        })
+        .catch(() => {
+          this.showResultMessage('Сервер недоступен', 'error');
         });
         
       this.isCreationDialogOpened = true;
@@ -613,11 +667,34 @@ export default {
         .then(response => {
           if (response.status === 200) {
             this.filters = response.data.data;
+            this.showResultMessage(response.data.message, 'success');
+          } else {
+            this.showResultMessage(response.data.message, 'error');
           }
         })
         .catch(error => {
           console.log(error);
+          this.showResultMessage(error.response.data.message, 'error');
+        })
+        .catch(() => {
+          this.showResultMessage('Сервер недоступен', 'error');
         });
+    },
+    showResultMessage: function(message, status) {
+      if (this.isOperationResultMessage) {
+        setTimeout(() => {
+          this.messageTimeout = 1000;
+          this.isOperationResultMessage = true;
+          this.operationResultMessage = message;
+          this.operationResultMessageColor = status;
+        }, 2000);
+      } else {
+        this.messageTimeout = 3000;
+        this.isOperationResultMessage = true;
+        this.operationResultMessage = message;
+        this.operationResultMessageColor = status;
+      }
+
     }
   },
   computed: {
